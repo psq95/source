@@ -24,6 +24,15 @@ map<string, double> bst_HitProcess :: integrateDgt(MHit* aHit, int hitn)
 	double diffLen = SensorLength - bsts.SensorLength;
  	double diffWid = SensorWidth  - bsts.SensorWidth;
 
+    printf("aHitGetDetDims[0] %8.3f\n", aHit->GetDetector().dimensions[] );
+    printf("SensorLength      %8.3f\n", SensorLength );
+    printf("bsts.SensorLength %8.3f\n", bsts.SensorLength );
+    printf("diffLen           %8.3f\n", diffLen );
+    printf("\n");
+    printf("aHitGetDetDims[0] %8.3f\n", aHit->GetDetector().dimensions[0] );
+    printf("SensorWidth       %8.3f\n", SensorWidth );
+    printf("bsts.SensorWidth  %8.3f\n", bsts.SensorWidth );
+    printf("diffWid           %8.3f\n", diffWid );
 
 	// there may be precision issues that's why it is not compared to zero
 	if( diffLen > 1E-3 || diffWid > 1E-3 )
