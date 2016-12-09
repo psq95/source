@@ -4,7 +4,7 @@
 #include "flux_hitprocess.h"         ///< flux hit process common to all
 
 // CLAS12
-#include "clas12/bonus_hitprocess.h"          ///< Barrel Silicon Tracker (bst)
+#include "clas12/rtpc_hitprocess.h"             ///< Radial Time Projection Chamber (RTPC)
 #include "clas12/svt/bst_hitprocess.h"          ///< Barrel Silicon Tracker (bst)
 #include "clas12/cnd_hitprocess.h"              ///< Central Neutron Detector
 #include "clas12/ctof_hitprocess.h"             ///< Central TOF
@@ -57,16 +57,14 @@ map<string, HitProcess_Factory> HitProcess_Map(string experiments)
 		// CLAS12
 		if(EXP == "clas12")
 		{
-			hitMap["bonus"]    = &bonus_HitProcess::createHitClass;
+			hitMap["rtpc"]     = &rtpc_HitProcess::createHitClass;
 			hitMap["bst"]      = &bst_HitProcess::createHitClass;
 			hitMap["cnd"]      = &cnd_HitProcess::createHitClass;
 			hitMap["ctof"]     = &ctof_HitProcess::createHitClass;
 			hitMap["dc"]       = &dc_HitProcess::createHitClass;
 			hitMap["ec"]       = &ec_HitProcess::createHitClass;
 			hitMap["ecs"]      = &ec_HitProcess::createHitClass;
-			hitMap["ftof_p1a"] = &ftof_HitProcess::createHitClass;
-			hitMap["ftof_p1b"] = &ftof_HitProcess::createHitClass;
-			hitMap["ftof_p2"]  = &ftof_HitProcess::createHitClass;
+			hitMap["ftof"]     = &ftof_HitProcess::createHitClass;
 			hitMap["ft_cal"]   = &ft_cal_HitProcess::createHitClass;
 			hitMap["ft_hodo"]  = &ft_hodo_HitProcess::createHitClass;
 			hitMap["htcc"]     = &htcc_HitProcess::createHitClass;

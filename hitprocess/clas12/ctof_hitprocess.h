@@ -38,6 +38,10 @@ public:
 	// twlk: Time walk correction, 3 constants each for L and R
 	vector<double> twlk[1][1][6];
 
+    // toff_LR and tof_P2P: time offsets for Left-Right and Paddle-to-Paddle
+    vector<double> toff_UD[1][1];
+    vector<double> toff_P2P[1][1];
+    
 	// tres: Gaussian sigma for smearing time resolution
 	vector<double> tres;
 
@@ -55,7 +59,8 @@ public:
 
 	double lengthHighPitch;  // length of long bar
 	double lengthLowPitch;   // length of short bar
-
+	double offsetFromCenter; // offset of the center of the straight scintillator to CLAS12 center
+	
 	//	voltage signal parameters, using double gaussian + delay (function DGauss, need documentation for it)
 	double vpar[4];
 
@@ -71,10 +76,6 @@ public:
 
 	~ctof_HitProcess(){;}
 
-	// constants initialized with initWithRunNumber
-	static ctofConstants ctc;
-
-	void initWithRunNumber(int runno);
 
 	// - integrateDgt: returns digitized information integrated over the hit
 	map<string, double> integrateDgt(MHit*, int);
@@ -94,6 +95,12 @@ public:
 
 	// creates the HitProcess
 	static HitProcess *createHitClass() {return new ctof_HitProcess;}
+
+private:
+	// constants initialized with initWithRunNumber
+	static ctofConstants ctc;
+
+	void initWithRunNumber(int runno);
 
 	// - electronicNoise: returns a vector of hits generated / by electronics.
 	vector<MHit*> electronicNoise();

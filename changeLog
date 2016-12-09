@@ -1,6 +1,35 @@
 Changelog for GEMC
 ==================
 
+12/6/16
+ - addded mirror sigmaAlpha in verbosity log
+
+12/5/16
+ - fixed clas12 ctof time offset
+ - added Birk Constant properties in material factory
+ - added reading mirrors Sigma Alpha. Fixed backward compatibility for materials.
+ - adding property sigmaAlpha in optical surfaces
+
+11/29/16
+ - tdc was not cast correcly to int in DC hit process
+
+11/23/16
+ - all ftof panels assigned to the same hit process and bank
+
+11/22/16
+ - added magnetic field information in MHit. This will give access to it to all sensitive detector hit process routines.
+ - loading field info in MHit
+ - changed DC hit process to have layer from 1-36 and to have TDC = time in ns
+
+11/18/16
+ - added option SKIPNGEN to skip N generated events
+
+11/15/16
+ - added CLAS12 CND, FMT, BST, HTCC, LTCC, RICH, FTCAL, FTHODO constants and database reading
+
+11/7/16
+ - new bonus hit process
+
 10/25/16
  - evio format for RF signal conforming to CLAS12 structure.
 

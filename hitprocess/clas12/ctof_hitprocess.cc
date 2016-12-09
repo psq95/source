@@ -111,9 +111,21 @@ static ctofConstants initializeCTOFConstants(int runno)
 	 }
 	 */
 
-	ctc.lengthHighPitch = 35.013*25.4/2;  // length of long bar
-	ctc.lengthLowPitch  = 34.664*25.4/2;  // length of short bar
+    cout<<"CTOF:Getting time_offset"<<endl;
+    sprintf(ctc.database,"/calibration/ctof/timing_offset:%d",ctc.runNo);
+    data.clear() ; calib->GetCalib(data,ctc.database);
+    for(unsigned row = 0; row < data.size(); row++)
+    {
+        isec   = data[row][0]; ilay   = data[row][1]; istr   = data[row][2];
+        ctc.toff_UD[isec-1][ilay-1].push_back(data[row][3]);
+        ctc.toff_P2P[isec-1][ilay-1].push_back(data[row][4]);
+    }
 
+    
+    ctc.lengthHighPitch  = 35.013*25.4/2;  // length of long bar
+	ctc.lengthLowPitch   = 34.664*25.4/2;  // length of short bar
+	ctc.offsetFromCenter = 100.0;          // the CTOF center is upstream so this quantity will be added to z
+	
 	// setting voltage signal parameters
 	ctc.vpar[0] = 50;  // delay, ns
 	ctc.vpar[1] = 10;  // rise time, ns
@@ -174,10 +186,10 @@ map<string, double> ctof_HitProcess :: integrateDgt(MHit* aHit, int hitn)
 	trueInfos tInfos(aHit);
 
 	// Distances from upstream, downstream
-	// ctof paddle center is exactly the target position,
-	// so z is also the local coordinate
-	double dUp = length + tInfos.z;
-	double dDn = length - tInfos.z;
+	// ctof paddle center is offsetby ctc.offsetFromCenter from the CLAS12 target position,
+	// so need to  z is also the local coordinate
+	double dUp = length + tInfos.z + ctc.offsetFromCenter;
+	double dDn = length - tInfos.z - ctc.offsetFromCenter;
 
 	// attenuation length
 	double attlenUp = ctc.attlen[sector-1][panel-1][0][paddle-1];
@@ -228,7 +240,7 @@ map<string, double> ctof_HitProcess :: integrateDgt(MHit* aHit, int hitn)
 		//double            C = ctc.twlk[sector-1][panel-1][2][paddle-1];
 	 //double   timeWalkUp = A/(B+C*sqrt(adcu));
 		double    timeWalkUp = 0.;
-		double          tUpU = tInfos.time + dUp/ctc.veff[sector-1][panel-1][0][paddle-1]/cm + timeWalkUp;
+		double          tUpU = tInfos.time + dUp/ctc.veff[sector-1][panel-1][0][paddle-1]/cm + ctc.toff_UD[sector-1][panel-1][paddle-1] + ctc.toff_P2P[sector-1][panel-1][paddle-1] + timeWalkUp;
 		double           tUp = G4RandGauss::shoot(tUpU,  sqrt(2)*ctc.tres[paddle-1]);
 		tdcuu = tUpU*ctc.tdcLSB;
 		tdcu = tUp*ctc.tdcLSB;
@@ -244,11 +256,55 @@ map<string, double> ctof_HitProcess :: integrateDgt(MHit* aHit, int hitn)
 		//double            C = ctc.twlk[sector-1][panel-1][5][paddle-1];
 	 //double   timeWalkDn = A/(B+C*sqrt(adcd));
 		double    timeWalkDn = 0.;
-		double          tDnU = tInfos.time + dDn/ctc.veff[sector-1][panel-1][1][paddle-1]/cm + timeWalkDn;
+		double          tDnU = tInfos.time + dDn/ctc.veff[sector-1][panel-1][1][paddle-1]/cm + ctc.toff_P2P[sector-1][panel-1][paddle-1] + timeWalkDn;
 		double           tDn = G4RandGauss::shoot(tDnU,  sqrt(2)*ctc.tres[paddle-1]);
 		tdcdu = tDnU*ctc.tdcLSB;
 		tdcd = tDn*ctc.tdcLSB;
 	}
+
+	// Status flags
+	switch (ctc.status[sector-1][panel-1][0][paddle-1])
+	{
+		case 0:
+			break;
+		case 1:
+			adcu = 0;
+			break;
+		case 2:
+			tdcu = 0;
+			break;
+		case 3:
+			adcu = tdcu = 0;
+			break;
+
+		case 5:
+			break;
+			
+		default:
+			cout << " > Unknown CTOF status: " << ctc.status[sector-1][panel-1][0][paddle-1] << " for sector " << sector << ",  panel " << panel << ", paddle " << paddle << " left " << endl;
+	}
+	
+	switch (ctc.status[sector-1][panel-1][1][paddle-1])
+	{
+		case 0:
+			break;
+		case 1:
+			adcd = 0;
+			break;
+		case 2:
+			tdcd = 0;
+			break;
+		case 3:
+			adcd = tdcd = 0;
+			break;
+			
+		case 5:
+			break;
+			
+		default:
+			cout << " > Unknown CTOF status: " << ctc.status[sector-1][panel-1][1][paddle-1] << " for sector " << sector << ",  panel " << panel << ", paddle " << paddle << " right " << endl;
+	}
+
 
 	dgtz["hitn"]   = hitn;
 	dgtz["paddle"] = paddle;

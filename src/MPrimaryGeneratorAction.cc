@@ -30,6 +30,7 @@ MPrimaryGeneratorAction::MPrimaryGeneratorAction(goptions *opts)
 	background_gen = gemcOpt->optMap["MERGE_LUND_BG"].args;
 	cosmics        = gemcOpt->optMap["COSMICRAYS"].args;
 	GEN_VERBOSITY  = gemcOpt->optMap["GEN_VERBOSITY"].arg;
+    ntoskip        = gemcOpt->optMap["SKIPNGEN"].arg;
 
 	particleTable = G4ParticleTable::GetParticleTable();
 
@@ -116,11 +117,14 @@ MPrimaryGeneratorAction::MPrimaryGeneratorAction(goptions *opts)
 		cout << hd_msg << " Luminosity Time Between Bunches: " << TBUNCH2/ns << " nanoseconds." << endl;
 	}
 
+    eventIndex = 1;
+
 }
 
 
 void MPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
+
 	// internal generator. Particle defined by command line
 	if(input_gen == "gemc_internal")
 	{
@@ -383,7 +387,6 @@ void MPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 					lundUserDefined.push_back(tmp);
 				}
 			}
-
 			for(int p=0; p<nparticles; p++)
 			{
 				double tmp, px, py, pz;
@@ -426,18 +429,26 @@ void MPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 					}
 
 					// Primary particle generated int the middle of Time window
-					particleGun->SetParticleTime(TWINDOW/2);
-					particleGun->SetNumberOfParticles(1);
-					particleGun->GeneratePrimaryVertex(anEvent);
+                    if(eventIndex > ntoskip) {
+                        particleGun->SetParticleTime(TWINDOW/2);
+                        particleGun->SetNumberOfParticles(1);
+                        particleGun->GeneratePrimaryVertex(anEvent);
+                    }
 					if(GEN_VERBOSITY > 3)
-					cout << hd_msg << " Particle Number:  " << p+1 << ", id=" << pdef << " (" << Particle->GetParticleName() << ")"
-					<< "  Vertex=" << beam_vrt/cm << "cm,  momentum=" << pmom/GeV << " GeV" << endl;
+                        cout << hd_msg << " Particle Number:  " << p+1 << ", id=" << pdef << " (" << Particle->GetParticleName() << ")"
+					         << "  Vertex=" << beam_vrt/cm << "cm,  momentum=" << pmom/GeV << " GeV" << endl;
 				}
 				else if(pindex != p+1)
-				if(GEN_VERBOSITY > 3)
-				cout << hd_msg << " Warning: file particle index " << tmp << " does not match read particle index " << p+1 << endl;
+                    if(GEN_VERBOSITY > 3)
+                        cout << hd_msg << " Warning: file particle index " << tmp << " does not match read particle index " << p+1 << endl;
 
 			}
+            if(eventIndex <= ntoskip) {
+                if(GEN_VERBOSITY > 3) {
+                    cout << " This event will be skipped." << endl;
+                }
+                eventIndex++;
+            }
 		}
 		else if((gformat == "stdhep" || gformat == "STDHEP" || gformat == "StdHep" || gformat == "StdHEP"))
 		{

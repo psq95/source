@@ -9,6 +9,32 @@ using namespace CLHEP;
 // geant4
 #include "Randomize.hh"
 
+// ccdb
+#include <CCDB/Calibration.h>
+#include <CCDB/Model/Assignment.h>
+#include <CCDB/CalibrationGenerator.h>
+using namespace ccdb;
+
+static bstConstants initializeBSTConstants(int runno)
+{
+	// all these constants should be read from CCDB
+	bstConstants bstc;
+
+
+	// database
+	bstc.runNo = runno;
+	bstc.date       = "2016-03-15";
+	if(getenv ("CCDB_CONNECTION") != NULL)
+		bstc.connection = (string) getenv("CCDB_CONNECTION");
+	else
+		bstc.connection = "mysql://clas12reader@clasdb.jlab.org/clas12";
+
+	bstc.variation  = "main";
+	auto_ptr<Calibration> calib(CalibrationGenerator::CreateCalibration(bstc.connection));
+
+	return bstc;
+}
+
 map<string, double> bst_HitProcess :: integrateDgt(MHit* aHit, int hitn)
 {
 	map<string, double> dgtz;
@@ -103,23 +129,32 @@ vector<identifier> bst_HitProcess :: processID(vector<identifier> id, G4Step* aS
 	int layer   = 2*yid[0].id + yid[1].id - 2 ;
 	int sector  = yid[2].id;
 	int isensor = yid[3].id;
-	
+
+    // this vector odd values are the strip numbers, the second number is the energy sharing
 	vector<double> multi_hit = bsts.FindStrip(layer-1, sector-1, isensor, Lxyz);
 	
 	int n_multi_hits = multi_hit.size()/2;
 	
 	// closest strip
+    // assigning the strip id
 	yid[4].id = (int) multi_hit[0];
 	
+    // assigning the 
 	yid[0].id_sharing = multi_hit[1];
 	yid[1].id_sharing = multi_hit[1];
 	yid[2].id_sharing = multi_hit[1];
 	yid[3].id_sharing = multi_hit[1];
 	yid[4].id_sharing = multi_hit[1];
 	
+
 	// additional strip
 	for(int h=1; h<n_multi_hits; h++)
 	{
+        // the first four identifiers are
+        // 0. superlayer
+        // 1. region
+        // 2. sector
+        // 3. sensor
 		for(int j=0; j<4; j++)
 		{
 			identifier this_id;
@@ -132,10 +167,13 @@ vector<identifier> bst_HitProcess :: processID(vector<identifier> id, G4Step* aS
 			this_id.id_sharing = multi_hit[3];
 			yid.push_back(this_id);
 		}
-		// last id is strip
+		// last identifier is the strip
 		identifier this_id;
 		this_id.name       = yid[4].name;
 		this_id.rule       = yid[4].rule;
+        
+        // should be h*2 but we know multi_hit has size 4.
+        // 2 is the
 		this_id.id         = (int) multi_hit[2];
 		this_id.time       = yid[4].time;
 		this_id.TimeWindow = yid[4].TimeWindow;
@@ -147,6 +185,16 @@ vector<identifier> bst_HitProcess :: processID(vector<identifier> id, G4Step* aS
 		
 	return yid;
 }
+
+void bst_HitProcess::initWithRunNumber(int runno)
+{
+	if(bstc.runNo != runno) {
+		cout << " > Initializing " << HCname << " digitization for run number " << runno << endl;
+		bstc = initializeBSTConstants(runno);
+		bstc.runNo = runno;
+	}
+}
+
 
 // - electronicNoise: returns a vector of hits generated / by electronics.
 vector<MHit*> bst_HitProcess :: electronicNoise()
@@ -189,6 +237,8 @@ double bst_HitProcess :: voltage(double charge, double time, double forTime)
 }
 
 
+// this static function will be loaded first thing by the executable
+bstConstants bst_HitProcess::bstc = initializeBSTConstants(-1);
 
 
 
